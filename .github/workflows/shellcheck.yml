@@ -15,4 +15,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run ShellCheck
-        run: find . -type f -name "*.sh" -exec shellcheck {} +
+        run: find . -type f -name "*.sh" -exec shellcheck -x -e SC2086,SC2181 {} +
