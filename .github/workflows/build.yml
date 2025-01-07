@@ -1,0 +1,42 @@
+name: Build and publish a Docker images
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  DOCKER_IMAGE: sameersbn/gitlab
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Set image tag
+        run: echo "IMAGE_TAG=${GITHUB_REF_NAME:-latest}" >> $GITHUB_ENV
+        
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: |
+            docker.io/${{ env.DOCKER_IMAGE }}:${{ env.IMAGE_TAG }}
+          cache-from: type=registry,ref=docker.io/${{ env.DOCKER_IMAGE }}:latest
+          build-args: |
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=$(date -u +'%Y-%m-%d %H:%M:%S%:z')
+          outputs: type=docker,dest=/tmp/docker-images.tar
+          
